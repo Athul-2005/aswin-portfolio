@@ -1,69 +1,47 @@
-import Image from "next/image";
+import Link from "next/link";
+import { site } from "@/data/content";
 
 export default function Home() {
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
+    <main id="main" className="min-h-svh flex flex-col justify-between p-6 md:p-12">
+      <header className="flex justify-between items-center py-4 border-b border-[var(--line)]">
+        <div>
+          <h1 className="font-['Bebas_Neue',sans-serif] text-3xl md:text-5xl tracking-wider text-[var(--fg)]">
+            {site.name}
           </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+          <p className="text-xs uppercase tracking-[0.18em] text-[var(--muted)] mt-1">
+            {site.tagline}
           </p>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+        <nav aria-label="Main Navigation" className="flex gap-6 text-sm tracking-widest uppercase">
+          <Link href="/gallery" className="text-[var(--muted)] hover:text-[var(--accent)] hover:underline">
+            Gallery
+          </Link>
+          <Link href="/recent" className="text-[var(--muted)] hover:text-[var(--accent)] hover:underline">
+            Recent Arts
+          </Link>
+          <Link href="/contact" className="text-[var(--muted)] hover:text-[var(--accent)] hover:underline">
+            Contact
+          </Link>
+        </nav>
+      </header>
+
+      <section className="my-auto py-24 text-center">
+        <p className="text-xs uppercase tracking-[0.18em] text-[var(--muted)] mb-4">
+          Chapter 00 / Phase 0 Foundation
+        </p>
+        <h2 className="font-['Bebas_Neue',sans-serif] text-[clamp(4rem,14vw,12rem)] leading-[0.9] text-[var(--fg)]">
+          ASWIN KRISHNA
+        </h2>
+        <p className="font-serif italic text-[clamp(1.4rem,3vw,2.5rem)] text-[var(--muted)] max-w-[60ch] mx-auto mt-6">
+          &ldquo;Curiosity makes me look twice. Passion makes me press the shutter.&rdquo;
+        </p>
+      </section>
+
+      <footer className="py-6 border-t border-[var(--line)] flex flex-col sm:flex-row justify-between items-center text-xs tracking-widest uppercase text-[var(--muted)] gap-4">
+        <span>© 2026 {site.name} · {site.location}</span>
+        <span className="text-[var(--accent)]">Phase 0: Foundation Complete</span>
+      </footer>
+    </main>
   );
 }
