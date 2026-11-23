@@ -32,9 +32,42 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Aswin Krishna | Toronto Photographer",
+  metadataBase: new URL("https://aswinkrishna.photography"),
+  title: {
+    default: "Aswin Krishna | Toronto Photographer",
+    template: "%s | Aswin Krishna Photography Toronto",
+  },
   description:
-    "Story-driven photography portfolio based in Toronto, Ontario. Nature, travel, weddings, and casual moments.",
+    "Story-driven portfolio of Aswin Krishna, a Toronto photographer specializing in nature and travel, intimate weddings, and casual everyday memories.",
+  keywords: [
+    "Toronto photographer",
+    "Ontario wedding photographer",
+    "nature photography Toronto",
+    "travel photographer Ontario",
+    "Toronto photo sessions",
+    "cinematic photography",
+  ],
+  authors: [{ name: "Aswin Krishna" }],
+  creator: "Aswin Krishna",
+  openGraph: {
+    type: "website",
+    locale: "en_CA",
+    url: "https://aswinkrishna.photography",
+    siteName: "Aswin Krishna Photography",
+    title: "Aswin Krishna | Toronto Photographer",
+    description:
+      "Story-driven portfolio of Aswin Krishna, a Toronto photographer specializing in nature, weddings, and casual moments.",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Aswin Krishna | Toronto Photographer",
+    description:
+      "Story-driven photography portfolio based in Toronto, Ontario, Canada.",
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 export default function RootLayout({

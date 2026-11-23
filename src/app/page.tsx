@@ -3,11 +3,53 @@ import Marquee from "@/components/Marquee";
 import QuoteReveal from "@/components/QuoteReveal";
 import MemoriesSequence from "@/components/MemoriesSequence";
 import SayHello from "@/components/SayHello";
-import { quotes } from "@/data/content";
+import { quotes, site } from "@/data/content";
 
 export default function Home() {
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "ProfessionalService",
+    name: "Aswin Krishna Photography",
+    image: "https://aswinkrishna.photography/opengraph-image",
+    description:
+      "Story-driven photography portfolio by Aswin Krishna based in Toronto, Ontario. Nature, travel, weddings, and casual lifestyle captures.",
+    address: {
+      "@type": "PostalAddress",
+      addressLocality: "Toronto",
+      addressRegion: "ON",
+      addressCountry: "CA",
+    },
+    geo: {
+      "@type": "GeoCoordinates",
+      latitude: "43.6532",
+      longitude: "-79.3832",
+    },
+    url: "https://aswinkrishna.photography",
+    telephone: "",
+    priceRange: "$$$",
+    areaServed: [
+      "Toronto",
+      "Greater Toronto Area",
+      "Mississauga",
+      "Oakville",
+      "Vaughan",
+      "Markham",
+      "Ontario",
+      "Canada",
+    ],
+    sameAs: [
+      site.instagram,
+    ],
+  };
+
   return (
     <main id="main" className="w-full flex flex-col">
+      {/* Schema.org Structured Data */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+
       {/* Chapter 0: Welcome (Hero) */}
       <Hero />
 
