@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { site, processSteps } from "@/data/content";
 
 export const metadata = {
@@ -8,17 +7,8 @@ export const metadata = {
 
 export default function ContactPage() {
   return (
-    <main id="main" className="min-h-svh p-6 md:p-12 flex flex-col justify-between">
-      <header className="flex justify-between items-center py-4 border-b border-[var(--line)]">
-        <Link href="/" className="font-['Bebas_Neue',sans-serif] text-2xl tracking-wider text-[var(--fg)] hover:text-[var(--accent)]">
-          ← Aswin Krishna
-        </Link>
-        <span className="text-xs uppercase tracking-[0.18em] text-[var(--muted)]">
-          Phase 0 Placeholder
-        </span>
-      </header>
-
-      <section className="py-16 max-w-[60ch]">
+    <main id="main" className="px-4 sm:px-8 md:px-12 py-12 md:py-24 max-w-[1440px] mx-auto w-full">
+      <section className="py-8 max-w-[60ch]">
         <h1 className="font-['Bebas_Neue',sans-serif] text-[clamp(3rem,11vw,9rem)] leading-[0.9] text-[var(--fg)] mb-6">
           CONTACT
         </h1>
@@ -39,10 +29,6 @@ export default function ContactPage() {
           ))}
         </div>
       </section>
-
-      <footer className="py-6 border-t border-[var(--line)] text-xs uppercase tracking-widest text-[var(--muted)]">
-        Contact Route Placeholder
-      </footer>
     </main>
   );
 }

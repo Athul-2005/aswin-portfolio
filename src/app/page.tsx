@@ -1,47 +1,20 @@
-import Link from "next/link";
-import { site } from "@/data/content";
-
 export default function Home() {
   return (
-    <main id="main" className="min-h-svh flex flex-col justify-between p-6 md:p-12">
-      <header className="flex justify-between items-center py-4 border-b border-[var(--line)]">
-        <div>
-          <h1 className="font-['Bebas_Neue',sans-serif] text-3xl md:text-5xl tracking-wider text-[var(--fg)]">
-            {site.name}
-          </h1>
-          <p className="text-xs uppercase tracking-[0.18em] text-[var(--muted)] mt-1">
-            {site.tagline}
-          </p>
-        </div>
-        <nav aria-label="Main Navigation" className="flex gap-6 text-sm tracking-widest uppercase">
-          <Link href="/gallery" className="text-[var(--muted)] hover:text-[var(--accent)] hover:underline">
-            Gallery
-          </Link>
-          <Link href="/recent" className="text-[var(--muted)] hover:text-[var(--accent)] hover:underline">
-            Recent Arts
-          </Link>
-          <Link href="/contact" className="text-[var(--muted)] hover:text-[var(--accent)] hover:underline">
-            Contact
-          </Link>
-        </nav>
-      </header>
-
-      <section className="my-auto py-24 text-center">
-        <p className="text-xs uppercase tracking-[0.18em] text-[var(--muted)] mb-4">
-          Chapter 00 / Phase 0 Foundation
+    <main id="main" className="px-4 sm:px-8 md:px-12 py-12 md:py-24 max-w-[1440px] mx-auto w-full">
+      <section className="py-20 md:py-32 text-center flex flex-col items-center">
+        <p className="text-xs uppercase tracking-[0.18em] text-[var(--muted)] mb-6">
+          Photography / Toronto, Ontario
         </p>
-        <h2 className="font-['Bebas_Neue',sans-serif] text-[clamp(4rem,14vw,12rem)] leading-[0.9] text-[var(--fg)]">
+        <h1 className="font-['Bebas_Neue',sans-serif] text-[clamp(4.5rem,19vw,17rem)] leading-[0.9] text-[var(--fg)] tracking-tight">
           ASWIN KRISHNA
-        </h2>
-        <p className="font-serif italic text-[clamp(1.4rem,3vw,2.5rem)] text-[var(--muted)] max-w-[60ch] mx-auto mt-6">
+        </h1>
+        <p className="font-serif italic text-[clamp(1.4rem,4vw,3.2rem)] text-[var(--fg)] max-w-[50ch] mx-auto mt-8 leading-snug">
           &ldquo;Curiosity makes me look twice. Passion makes me press the shutter.&rdquo;
         </p>
+        <p className="text-xs uppercase tracking-[0.18em] text-[var(--accent)] mt-8">
+          Global Shell Loaded · Phase 1 Complete
+        </p>
       </section>
-
-      <footer className="py-6 border-t border-[var(--line)] flex flex-col sm:flex-row justify-between items-center text-xs tracking-widest uppercase text-[var(--muted)] gap-4">
-        <span>© 2026 {site.name} · {site.location}</span>
-        <span className="text-[var(--accent)]">Phase 0: Foundation Complete</span>
-      </footer>
     </main>
   );
 }
