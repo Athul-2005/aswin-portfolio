@@ -55,7 +55,7 @@ export default function RootLayout({
           <SmoothScroll>
             <div className="flex flex-col min-h-svh">
               <Nav />
-              <div className="flex-1 pt-20">{children}</div>
+              <div className="flex-1">{children}</div>
               <Footer />
             </div>
           </SmoothScroll>

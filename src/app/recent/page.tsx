@@ -7,7 +7,7 @@ export const metadata = {
 
 export default function RecentPage() {
   return (
-    <main id="main" className="px-4 sm:px-8 md:px-12 py-12 md:py-24 max-w-[1440px] mx-auto w-full">
+    <main id="main" className="pt-24 pb-12 px-4 sm:px-8 md:px-12 max-w-[1440px] mx-auto w-full min-h-svh">
       <section className="py-8">
         <h1 className="font-['Bebas_Neue',sans-serif] text-[clamp(3rem,11vw,9rem)] leading-[0.9] text-[var(--fg)] mb-6">
           RECENT ARTS
