@@ -1,31 +1,40 @@
-import { galleryPhotos } from "@/data/photos";
+import { Suspense } from "react";
+import GalleryGrid from "@/components/GalleryGrid";
 
 export const metadata = {
   title: "Gallery | Aswin Krishna Photography Toronto",
-  description: "Portfolio gallery of nature, wedding, and casual photography in Toronto and beyond.",
+  description:
+    "Portfolio gallery of nature, wedding, and casual photography in Toronto and across Ontario.",
 };
 
 export default function GalleryPage() {
   return (
-    <main id="main" className="pt-24 pb-12 px-4 sm:px-8 md:px-12 max-w-[1440px] mx-auto w-full min-h-svh">
-      <section className="py-8">
-        <h1 className="font-['Bebas_Neue',sans-serif] text-[clamp(3rem,11vw,9rem)] leading-[0.9] text-[var(--fg)] mb-6">
+    <main
+      id="main"
+      className="pt-28 pb-20 px-4 sm:px-8 md:px-12 max-w-[1440px] mx-auto w-full min-h-svh"
+    >
+      <header className="mb-10">
+        <span className="text-xs uppercase tracking-[0.2em] text-[var(--accent)] font-medium">
+          Portfolio Archive
+        </span>
+        <h1 className="font-['Bebas_Neue',sans-serif] text-[clamp(3.5rem,12vw,9rem)] leading-[0.9] text-[var(--fg)] tracking-tight mt-2">
           GALLERY
         </h1>
-        <p className="text-xs uppercase tracking-[0.18em] text-[var(--muted)] mb-8">
-          Total items: {galleryPhotos.length} photos ready in catalog
+        <p className="text-xs sm:text-sm uppercase tracking-[0.18em] text-[var(--muted)] mt-4">
+          Curated visual stories across Toronto, Algonquin, and beyond
         </p>
-        <div className="flex flex-wrap gap-4 mb-12">
-          {["All", "Nature", "Wedding", "Casual"].map((filter) => (
-            <span
-              key={filter}
-              className="px-4 py-2 text-xs uppercase tracking-[0.18em] border border-[var(--line)] text-[var(--fg)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors cursor-pointer"
-            >
-              {filter}
-            </span>
-          ))}
-        </div>
-      </section>
+      </header>
+
+      {/* Suspense wrapper for client component using useSearchParams */}
+      <Suspense
+        fallback={
+          <div className="py-20 text-center text-xs uppercase tracking-widest text-[var(--muted)]">
+            Loading gallery...
+          </div>
+        }
+      >
+        <GalleryGrid />
+      </Suspense>
     </main>
   );
 }
