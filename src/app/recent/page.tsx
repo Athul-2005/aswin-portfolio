@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { getRecentArts } from "@/lib/recent";
+import { getRecentPhotos } from "@/lib/photos";
 import { site } from "@/data/content";
 
 export const metadata = {
@@ -9,9 +9,10 @@ export const metadata = {
 };
 
 export default async function RecentPage() {
-  const arts = await getRecentArts();
-  const featured = arts[0];
-  const gridItems = arts.slice(1);
+  const arts = await getRecentPhotos();
+  const hasArts = arts.length > 0;
+  const featured = hasArts ? arts[0] : null;
+  const gridItems = hasArts ? arts.slice(1) : [];
 
   return (
     <main
@@ -30,6 +31,23 @@ export default async function RecentPage() {
           Unfiltered captures, fleeting moments, and journal entries from Toronto and the road
         </p>
       </header>
+
+      {/* Empty State */}
+      {!hasArts && (
+        <div className="py-24 text-center border border-[var(--line)] bg-[var(--bg-soft)] p-8 my-auto">
+          <p className="text-xs uppercase tracking-[0.2em] text-[var(--muted)]">
+            No recent arts uploaded yet.
+          </p>
+          <a
+            href={site.instagram}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-4 inline-block text-xs uppercase tracking-[0.18em] text-[var(--accent)] hover:text-[var(--fg)] underline transition-colors"
+          >
+            Follow on Instagram {site.instagramHandle} →
+          </a>
+        </div>
+      )}
 
       {/* Featured Piece (Full-bleed card) */}
       {featured && (
@@ -61,79 +79,78 @@ export default async function RecentPage() {
                   {featured.title}
                 </h2>
               </div>
-              <span className="text-xs uppercase tracking-[0.18em] text-[var(--fg)] group-hover:text-[var(--accent)] transition-colors inline-flex items-center gap-1.5 self-start sm:self-auto border-b border-transparent group-hover:border-[var(--accent)] pb-0.5">
-                View on Instagram ↗
+              <span className="text-xs uppercase tracking-[0.18em] text-[var(--accent)] group-hover:text-[var(--fg)] transition-colors inline-flex items-center gap-2">
+                Open in Instagram ↗
               </span>
             </div>
           </a>
         </section>
       )}
 
-      {/* Staggered 2-Column Grid */}
-      <section aria-label="Recent Gallery Grid" className="mb-20">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 items-start">
-          {gridItems.map((item, idx) => {
-            // Second column (odd index in 0-indexed slice) is offset down by 6rem on desktop
-            const isSecondColumn = idx % 2 === 1;
+      {/* Grid of Remaining Pieces */}
+      {gridItems.length > 0 && (
+        <section
+          aria-label="Recent captures grid"
+          className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 mb-20"
+        >
+          {gridItems.map((item, idx) => (
+            <article
+              key={item.id}
+              className="border border-[var(--line)] bg-[var(--bg-soft)] group flex flex-col overflow-hidden"
+            >
+              <div className="relative w-full aspect-[4/3] overflow-hidden bg-black">
+                <Image
+                  src={item.src}
+                  alt={item.alt}
+                  fill
+                  sizes="(max-width: 768px) 100vw, 50vw"
+                  loading={idx < 2 ? "eager" : "lazy"}
+                  className="object-cover object-center transition-transform duration-700 ease-out group-hover:scale-105"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              </div>
 
-            return (
-              <a
-                key={item.id}
-                href={item.instagramUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={`group block border border-[var(--line)] bg-[var(--bg-soft)] overflow-hidden transition-all duration-300 hover:border-[var(--muted)] ${
-                  isSecondColumn ? "md:mt-24" : ""
-                }`}
-              >
-                <div className="relative w-full aspect-[4/3] overflow-hidden">
-                  <Image
-                    src={item.src}
-                    alt={item.alt}
-                    fill
-                    sizes="(max-width: 768px) 100vw, 50vw"
-                    className="object-cover object-center transition-transform duration-700 ease-out group-hover:scale-105"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-80 group-hover:opacity-100 transition-opacity" />
+              <div className="p-6 flex flex-col justify-between flex-1 gap-4">
+                <div className="flex justify-between items-start gap-4">
+                  <h3 className="font-['Bebas_Neue',sans-serif] text-2xl sm:text-3xl text-[var(--fg)] tracking-wide">
+                    {item.title}
+                  </h3>
+                  <span className="text-[11px] uppercase tracking-[0.18em] text-[var(--muted)] font-mono shrink-0">
+                    {item.date}
+                  </span>
                 </div>
 
-                <div className="p-6 flex flex-col justify-between">
-                  <div>
-                    <span className="text-[11px] uppercase tracking-[0.18em] text-[var(--accent)] font-medium">
-                      {item.date}
-                    </span>
-                    <h3 className="font-['Bebas_Neue',sans-serif] text-2xl sm:text-3xl text-[var(--fg)] mt-1 tracking-wide">
-                      {item.title}
-                    </h3>
-                  </div>
-
-                  <div className="mt-6 pt-4 border-t border-[var(--line)] flex items-center justify-between text-xs uppercase tracking-[0.18em] text-[var(--muted)] group-hover:text-[var(--fg)]">
-                    <span>Aswin Krishna</span>
-                    <span className="text-[var(--accent)] group-hover:translate-x-1 transition-transform">
-                      View on Instagram ↗
-                    </span>
-                  </div>
+                <div className="pt-2 border-t border-[var(--line)] flex justify-between items-center text-xs uppercase tracking-[0.18em]">
+                  <span className="text-[var(--muted)]">Journal entry</span>
+                  <a
+                    href={item.instagramUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[var(--accent)] hover:text-[var(--fg)] transition-colors inline-flex items-center gap-1.5 focus-visible:outline-1 focus-visible:outline-[var(--accent)]"
+                    aria-label={`View ${item.title} on Instagram`}
+                  >
+                    <span>View post</span>
+                    <span aria-hidden="true">↗</span>
+                  </a>
                 </div>
-              </a>
-            );
-          })}
-        </div>
-      </section>
+              </div>
+            </article>
+          ))}
+        </section>
+      )}
 
-      {/* Page Footer Action */}
-      <section className="pt-12 pb-16 border-t border-[var(--line)] text-center flex flex-col items-center">
-        <p className="text-xs uppercase tracking-[0.2em] text-[var(--muted)] mb-6">
-          Follow along with the journey
-        </p>
+      {/* Footer Note */}
+      <div className="mt-auto pt-10 border-t border-[var(--line)] flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 text-xs uppercase tracking-[0.18em] text-[var(--muted)]">
+        <span>Follow for weekly frames & stories</span>
         <a
           href={site.instagram}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-block px-10 py-5 border border-[var(--fg)] text-xs sm:text-sm uppercase tracking-[0.2em] font-medium text-[var(--fg)] hover:bg-[var(--fg)] hover:text-black transition-colors duration-300 focus-visible:outline-1 focus-visible:outline-[var(--accent)]"
+          className="text-[var(--fg)] hover:text-[var(--accent)] transition-colors"
         >
-          Follow {site.instagramHandle} on Instagram ↗
+          {site.instagramHandle}
         </a>
-      </section>
+      </div>
     </main>
   );
 }

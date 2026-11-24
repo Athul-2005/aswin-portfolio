@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import GalleryGrid from "@/components/GalleryGrid";
+import { getPhotos } from "@/lib/photos";
 
 export const metadata = {
   title: "Gallery | Aswin Krishna Photography Toronto",
@@ -7,7 +8,9 @@ export const metadata = {
     "Portfolio gallery of nature, wedding, and casual photography in Toronto and across Ontario.",
 };
 
-export default function GalleryPage() {
+export default async function GalleryPage() {
+  const galleryPhotos = await getPhotos("gallery");
+
   return (
     <main
       id="main"
@@ -33,7 +36,7 @@ export default function GalleryPage() {
           </div>
         }
       >
-        <GalleryGrid />
+        <GalleryGrid initialPhotos={galleryPhotos} />
       </Suspense>
     </main>
   );

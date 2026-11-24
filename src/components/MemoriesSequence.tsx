@@ -10,44 +10,46 @@ import {
   MotionValue,
 } from "motion/react";
 import TransitionLink from "./TransitionLink";
-import { memoriesPhotos } from "@/data/photos";
+import { Photo, Category, memoriesPhotos as fallbackMemoriesPhotos } from "@/data/photos";
 import { useIsMobile } from "@/hooks/useIsMobile";
 
 interface SceneConfig {
   numeral: string;
-  category: "nature" | "wedding" | "casual";
+  category: Category;
   title: string;
   caption: string;
-  tintColor: string; // overlay under 15% opacity
+  tintColor: string;
 }
 
-const SCENES: SceneConfig[] = [
+const DEFAULT_SCENES: SceneConfig[] = [
   {
     numeral: "I",
     category: "nature",
     title: "Nature & Travel",
     caption: "Where the light lands first.",
-    tintColor: "rgba(31, 58, 43, 0.12)", // --tint-nature
+    tintColor: "rgba(31, 58, 43, 0.12)",
   },
   {
     numeral: "II",
     category: "wedding",
     title: "Weddings",
     caption: "The in-between moments.",
-    tintColor: "rgba(176, 141, 87, 0.14)", // --tint-wedding
+    tintColor: "rgba(176, 141, 87, 0.14)",
   },
   {
     numeral: "III",
     category: "casual",
     title: "Everyday",
     caption: "Ordinary, until it isn't.",
-    tintColor: "rgba(58, 58, 58, 0.14)", // --tint-casual
+    tintColor: "rgba(58, 58, 58, 0.14)",
   },
 ];
 
 interface SceneSlideProps {
   scene: SceneConfig;
+  photo: Photo;
   index: number;
+  totalScenes: number;
   scrollYProgress: MotionValue<number>;
   isMobile: boolean;
   shouldReduceMotion: boolean | null;
@@ -55,17 +57,17 @@ interface SceneSlideProps {
 
 function SceneSlide({
   scene,
+  photo,
   index,
+  totalScenes,
   scrollYProgress,
   isMobile,
   shouldReduceMotion,
 }: SceneSlideProps) {
-  const photo = memoriesPhotos[scene.category];
-  const s = index / 3;
-  const e = (index + 1) / 3;
+  const s = totalScenes > 0 ? index / totalScenes : 0;
+  const e = totalScenes > 0 ? (index + 1) / totalScenes : 1;
 
-  // Scene 0 is visible from the beginning; scenes 1 and 2 wipe over previous
-  // Clip path wipe: inset(0 100% 0 0) -> inset(0% 0% 0% 0%)
+  // Scene 0 is visible from the beginning; subsequent scenes wipe over previous
   const clipInsetRight = useTransform(
     scrollYProgress,
     [s, s + 0.1],
@@ -79,7 +81,7 @@ function SceneSlide({
     isMobile || shouldReduceMotion ? [1, 1, 1] : [1.3, 1.05, 1.0]
   );
 
-  // Numeral: fades in and slides x: -40 to 0 over [s+0.05, s+0.14]
+  // Numeral: fades in and slides x: -40 to 0
   const numOpacity = useTransform(
     scrollYProgress,
     [s + 0.05, s + 0.14],
@@ -91,7 +93,7 @@ function SceneSlide({
     [-40, 0]
   );
 
-  // Title + Caption: slide up 40px, fade in over [s+0.10, s+0.20]
+  // Title + Caption: slide up 40px, fade in
   const textOpacity = useTransform(
     scrollYProgress,
     [s + 0.1, s + 0.2],
@@ -99,7 +101,7 @@ function SceneSlide({
   );
   const textY = useTransform(scrollYProgress, [s + 0.1, s + 0.2], [40, 0]);
 
-  // Gallery Link: fade in over [s+0.16, s+0.24]
+  // Gallery Link: fade in
   const linkOpacity = useTransform(
     scrollYProgress,
     [s + 0.16, s + 0.24],
@@ -160,7 +162,7 @@ function SceneSlide({
             03 / Memories
           </span>
           <span className="text-[11px] sm:text-xs uppercase tracking-[0.18em] text-[var(--muted)]">
-            Scene {scene.numeral} · {scene.title}
+            Scene {scene.numeral} · {photo.title || scene.title}
           </span>
         </div>
 
@@ -173,7 +175,6 @@ function SceneSlide({
               x: shouldReduceMotion ? 0 : numX,
             }}
             className="font-['Bebas_Neue',sans-serif] text-[clamp(6rem,16vw,14rem)] leading-none text-transparent stroke-numeral select-none"
-            style-stroke="1px var(--accent)"
           >
             <span
               className="text-transparent"
@@ -194,10 +195,10 @@ function SceneSlide({
             className="-mt-4 md:-mt-6"
           >
             <h2 className="font-['Bebas_Neue',sans-serif] text-[clamp(2.5rem,7vw,6.5rem)] leading-[0.9] text-[var(--fg)] tracking-tight">
-              {scene.title}
+              {photo.title || scene.title}
             </h2>
             <p className="font-serif italic text-[clamp(1.2rem,2.8vw,2.2rem)] text-[var(--fg)] mt-3 leading-snug">
-              &ldquo;{scene.caption}&rdquo;
+              &ldquo;{photo.caption || scene.caption}&rdquo;
             </p>
           </motion.div>
 
@@ -224,11 +225,27 @@ function SceneSlide({
   );
 }
 
-export default function MemoriesSequence() {
+interface MemoriesSequenceProps {
+  photos?: Record<Category, Photo | null>;
+}
+
+export default function MemoriesSequence({
+  photos = fallbackMemoriesPhotos,
+}: MemoriesSequenceProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
   const shouldReduceMotion = useReducedMotion();
-  const [activeSceneIdx, setActiveSceneIdx] = useState(0);
+  const [, setActiveSceneIdx] = useState(0);
+
+  // Filter available scenes where photo is present (Rule 11: empty state - missing memory scene is skipped)
+  const activeScenes = DEFAULT_SCENES.filter((scene) => !!photos?.[scene.category]).map(
+    (scene, idx) => ({
+      ...scene,
+      numeral: ["I", "II", "III"][idx] || "I",
+    })
+  );
+
+  const totalScenes = activeScenes.length;
 
   const { scrollYProgress } = useScroll({
     target: containerRef,
@@ -237,63 +254,53 @@ export default function MemoriesSequence() {
 
   // Track active scene indicator
   useEffect(() => {
+    if (totalScenes === 0) return;
     return scrollYProgress.on("change", (latest) => {
-      if (latest < 0.33) {
-        setActiveSceneIdx(0);
-      } else if (latest < 0.66) {
-        setActiveSceneIdx(1);
-      } else {
-        setActiveSceneIdx(2);
-      }
+      const idx = Math.min(
+        Math.floor(latest * totalScenes),
+        totalScenes - 1
+      );
+      setActiveSceneIdx(Math.max(0, idx));
     });
-  }, [scrollYProgress]);
+  }, [scrollYProgress, totalScenes]);
+
+  if (totalScenes === 0) {
+    return null;
+  }
+
+  const heightClass =
+    totalScenes === 1
+      ? "h-[200vh]"
+      : totalScenes === 2
+      ? isMobile
+        ? "h-[400vh]"
+        : "h-[600vh]"
+      : isMobile
+      ? "h-[600vh]"
+      : "h-[900vh]";
 
   return (
     <section
       ref={containerRef}
-      className={`relative w-full ${
-        isMobile ? "h-[600vh]" : "h-[900vh]"
-      } bg-black`}
+      className={`relative w-full ${heightClass} bg-black`}
     >
       {/* Single Sticky Stage */}
       <div className="sticky top-0 h-svh w-full overflow-hidden">
-        {/* Render the 3 scenes stacked */}
-        {SCENES.map((scene, idx) => (
-          <SceneSlide
-            key={scene.numeral}
-            scene={scene}
-            index={idx}
-            scrollYProgress={scrollYProgress}
-            isMobile={isMobile}
-            shouldReduceMotion={shouldReduceMotion}
-          />
-        ))}
-
-        {/* Bottom-Center Scene Indicator: I · II · III */}
-        <div
-          aria-label="Scene progress indicator"
-          className="absolute bottom-6 md:bottom-8 left-1/2 -translate-x-1/2 z-40 flex items-center gap-4 px-4 py-1.5 rounded-full bg-black/60 backdrop-blur-md border border-[var(--line)] text-xs uppercase tracking-widest pointer-events-none"
-        >
-          {SCENES.map((scene, idx) => {
-            const isActive = activeSceneIdx === idx;
-            return (
-              <div key={scene.numeral} className="flex items-center gap-4">
-                <span
-                  className={`transition-colors duration-300 font-semibold ${
-                    isActive
-                      ? "text-[var(--accent)] scale-110"
-                      : "text-[var(--muted)] opacity-60"
-                  }`}
-                >
-                  {scene.numeral}
-                </span>
-                {idx < SCENES.length - 1 && (
-                  <span className="w-1 h-1 rounded-full bg-[var(--line)]" />
-                )}
-              </div>
-            );
-          })}
-        </div>
+        {activeScenes.map((scene, index) => {
+          const photo = photos[scene.category]!;
+          return (
+            <SceneSlide
+              key={scene.category}
+              scene={scene}
+              photo={photo}
+              index={index}
+              totalScenes={totalScenes}
+              scrollYProgress={scrollYProgress}
+              isMobile={isMobile}
+              shouldReduceMotion={shouldReduceMotion}
+            />
+          );
+        })}
       </div>
     </section>
   );

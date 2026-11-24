@@ -4,7 +4,7 @@ import { useState } from "react";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence, useReducedMotion } from "motion/react";
-import { Photo, Category, galleryPhotos } from "@/data/photos";
+import { Photo, Category, galleryPhotos as fallbackGalleryPhotos } from "@/data/photos";
 import Lightbox from "./Lightbox";
 import { playShutterSound } from "@/lib/shutter";
 
@@ -15,7 +15,13 @@ const CATEGORIES: { label: string; value: Category | "all" }[] = [
   { label: "Casual", value: "casual" },
 ];
 
-export default function GalleryGrid() {
+interface GalleryGridProps {
+  initialPhotos?: Photo[];
+}
+
+export default function GalleryGrid({
+  initialPhotos = fallbackGalleryPhotos,
+}: GalleryGridProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const shouldReduceMotion = useReducedMotion();
@@ -27,8 +33,8 @@ export default function GalleryGrid() {
   // Filtered photos
   const filteredPhotos =
     currentCategory === "all"
-      ? galleryPhotos
-      : galleryPhotos.filter((p) => p.category === currentCategory);
+      ? initialPhotos
+      : initialPhotos.filter((p) => p.category === currentCategory);
 
   const selectedIndex = selectedPhoto
     ? filteredPhotos.findIndex((p) => p.id === selectedPhoto.id)
@@ -87,91 +93,111 @@ export default function GalleryGrid() {
         })}
       </div>
 
-      {/* Masonry Layout via CSS columns with 8px gap */}
-      <motion.div
-        layout
-        className="columns-1 sm:columns-2 lg:columns-3 gap-[8px] space-y-[8px]"
-      >
-        <AnimatePresence>
+      {/* Empty State (Rule 11: empty gallery shows a short message) */}
+      {filteredPhotos.length === 0 ? (
+        <div className="py-24 text-center border border-[var(--line)] bg-[var(--bg-soft)] p-8">
+          <p className="text-xs uppercase tracking-[0.2em] text-[var(--muted)]">
+            No photographs found in this collection yet.
+          </p>
+          <button
+            type="button"
+            onClick={() => handleFilterChange("all")}
+            className="mt-4 inline-block text-xs uppercase tracking-[0.18em] text-[var(--accent)] hover:text-[var(--fg)] underline transition-colors cursor-pointer"
+          >
+            View all photographs →
+          </button>
+        </div>
+      ) : (
+        /* Masonry Layout via CSS columns with 8px gap */
+        <div
+          className="columns-1 sm:columns-2 lg:columns-3 gap-2 [column-fill:_balance]"
+          style={{ columnGap: "8px" }}
+        >
           {filteredPhotos.map((photo, index) => {
             const isHovered = hoveredPhotoId === photo.id;
-            const isAnyHovered = hoveredPhotoId !== null;
-
             return (
               <motion.div
                 key={photo.id}
                 layout
-                data-cursor="view"
-                initial={
-                  shouldReduceMotion
-                    ? { opacity: 1 }
-                    : {
-                        opacity: 0,
-                        clipPath: "inset(0% 100% 0% 0%)",
-                        scale: 1.15,
-                      }
-                }
-                whileInView={
-                  shouldReduceMotion
-                    ? { opacity: 1 }
-                    : {
-                        opacity: 1,
-                        clipPath: "inset(0% 0% 0% 0%)",
-                        scale: 1,
-                      }
-                }
-                viewport={{ once: true, amount: 0.15 }}
+                initial={shouldReduceMotion ? false : { opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={shouldReduceMotion ? undefined : { opacity: 0, scale: 0.95 }}
                 transition={{
-                  delay: shouldReduceMotion ? 0 : (index % 3) * 0.1,
-                  duration: 0.8,
+                  duration: shouldReduceMotion ? 0 : 0.4,
+                  delay: shouldReduceMotion ? 0 : Math.min(index * 0.04, 0.4),
                   ease: [0.22, 1, 0.36, 1],
                 }}
-                onMouseEnter={() => setHoveredPhotoId(photo.id)}
-                onMouseLeave={() => setHoveredPhotoId(null)}
-                onClick={() => handlePhotoClick(photo)}
-                className={`relative break-inside-avoid overflow-hidden cursor-pointer group transition-all duration-300 ${
-                  isAnyHovered && !isHovered ? "opacity-40" : "opacity-100"
-                }`}
-                style={{
-                  transform: isHovered && !shouldReduceMotion ? "scale(1.04)" : "scale(1)",
-                  zIndex: isHovered ? 20 : 1,
-                }}
+                className="break-inside-avoid mb-2"
               >
-                <motion.div layoutId={`photo-${photo.id}`}>
-                  <Image
-                    src={photo.src}
-                    alt={photo.alt}
-                    width={photo.width}
-                    height={photo.height}
-                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                    className="w-full h-auto object-cover block bg-[var(--bg-soft)] transition-transform duration-500 group-hover:brightness-105"
-                  />
-                </motion.div>
+                <div
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => handlePhotoClick(photo)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      handlePhotoClick(photo);
+                    }
+                  }}
+                  onMouseEnter={() => setHoveredPhotoId(photo.id)}
+                  onMouseLeave={() => setHoveredPhotoId(null)}
+                  className="group relative block w-full overflow-hidden cursor-pointer focus-visible:outline-2 focus-visible:outline-[var(--accent)] focus-visible:outline-offset-2 border border-[var(--line)] bg-[var(--bg-soft)]"
+                  aria-label={`Open photo: ${photo.title}`}
+                >
+                  {/* Photo Container */}
+                  <div className="relative w-full overflow-hidden">
+                    <Image
+                      src={photo.src}
+                      alt={photo.alt}
+                      width={photo.width}
+                      height={photo.height}
+                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                      loading={index < 4 ? "eager" : "lazy"}
+                      priority={index < 2}
+                      className="w-full h-auto object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+                    />
 
-                {/* Hover Caption Overlay */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-4">
-                  <span className="text-[10px] uppercase tracking-[0.2em] text-[var(--accent)] font-semibold">
-                    {photo.category}
-                  </span>
-                  <p className="text-sm font-medium text-[var(--fg)] mt-1">
-                    {photo.title}
-                  </p>
+                    {/* Gradient Overlay on Hover */}
+                    <div
+                      className={`absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent transition-opacity duration-300 pointer-events-none ${
+                        isHovered ? "opacity-100" : "opacity-0"
+                      }`}
+                    />
+
+                    {/* Meta info revealed on hover */}
+                    <div
+                      className={`absolute bottom-0 left-0 right-0 p-4 flex flex-col justify-end transition-opacity duration-300 pointer-events-none ${
+                        isHovered ? "opacity-100" : "opacity-0"
+                      }`}
+                    >
+                      <span className="text-[10px] uppercase tracking-[0.2em] text-[var(--accent)] font-medium">
+                        {photo.category}
+                      </span>
+                      <h2 className="font-['Bebas_Neue',sans-serif] text-2xl text-[var(--fg)] tracking-wide mt-0.5">
+                        {photo.title}
+                      </h2>
+                    </div>
+                  </div>
                 </div>
               </motion.div>
             );
           })}
-        </AnimatePresence>
-      </motion.div>
+        </div>
+      )}
 
       {/* Lightbox Modal */}
-      <Lightbox
-        photo={selectedPhoto}
-        currentIndex={selectedIndex}
-        totalCount={filteredPhotos.length}
-        onClose={() => setSelectedPhoto(null)}
-        onPrev={handlePrevPhoto}
-        onNext={handleNextPhoto}
-      />
+      <AnimatePresence>
+        {selectedPhoto && (
+          <Lightbox
+            photo={selectedPhoto}
+            currentIndex={selectedIndex >= 0 ? selectedIndex : 0}
+            totalCount={filteredPhotos.length}
+            onClose={() => setSelectedPhoto(null)}
+            onNext={handleNextPhoto}
+            onPrev={handlePrevPhoto}
+          />
+        )}
+      </AnimatePresence>
     </>
   );
 }

@@ -2,12 +2,7 @@ import type { Metadata } from "next";
 import { Bebas_Neue, Cormorant_Garamond, Inter } from "next/font/google";
 import "./globals.css";
 
-import SkipLink from "@/components/SkipLink";
-import Nav from "@/components/Nav";
-import Footer from "@/components/Footer";
-import SmoothScroll from "@/components/SmoothScroll";
-import { PageTransitionProvider } from "@/components/PageTransition";
-import ScrollProgress from "@/components/ScrollProgress";
+import Shell from "@/components/Shell";
 
 const bebasNeue = Bebas_Neue({
   weight: "400",
@@ -80,17 +75,7 @@ export default function RootLayout({
       className={`${bebasNeue.variable} ${cormorantGaramond.variable} ${inter.variable}`}
     >
       <body className="min-h-svh bg-[var(--bg)] text-[var(--fg)] font-sans antialiased selection:bg-[var(--accent)] selection:text-black">
-        <SkipLink />
-        <ScrollProgress />
-        <PageTransitionProvider>
-          <SmoothScroll>
-            <div className="flex flex-col min-h-svh">
-              <Nav />
-              <div className="flex-1">{children}</div>
-              <Footer />
-            </div>
-          </SmoothScroll>
-        </PageTransitionProvider>
+        <Shell>{children}</Shell>
       </body>
     </html>
   );

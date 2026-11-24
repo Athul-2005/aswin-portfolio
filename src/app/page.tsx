@@ -4,8 +4,14 @@ import QuoteReveal from "@/components/QuoteReveal";
 import MemoriesSequence from "@/components/MemoriesSequence";
 import SayHello from "@/components/SayHello";
 import { quotes, site } from "@/data/content";
+import { getPhotos, getMemoriesPhotos } from "@/lib/photos";
 
-export default function Home() {
+export default async function Home() {
+  const [heroPhotos, memoriesPhotos] = await Promise.all([
+    getPhotos("hero"),
+    getMemoriesPhotos(),
+  ]);
+
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "ProfessionalService",
@@ -37,9 +43,7 @@ export default function Home() {
       "Ontario",
       "Canada",
     ],
-    sameAs: [
-      site.instagram,
-    ],
+    sameAs: [site.instagram],
   };
 
   return (
@@ -51,7 +55,7 @@ export default function Home() {
       />
 
       {/* Chapter 0: Welcome (Hero) */}
-      <Hero />
+      <Hero photos={heroPhotos} />
 
       {/* Marquee Strip directly under the Hero */}
       <Marquee />
@@ -66,7 +70,7 @@ export default function Home() {
       />
 
       {/* Chapter 2: Memories (three scenes, continuous sequence) */}
-      <MemoriesSequence />
+      <MemoriesSequence photos={memoriesPhotos} />
 
       {/* Chapter 3: Promise (closing quote) */}
       <QuoteReveal

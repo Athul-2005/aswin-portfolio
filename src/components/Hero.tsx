@@ -3,15 +3,24 @@
 import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import { motion, useScroll, useTransform, useReducedMotion } from "motion/react";
-import { heroPhotos } from "@/data/photos";
+import { Photo, heroPhotos as fallbackHeroPhotos } from "@/data/photos";
 import { site } from "@/data/content";
 
-export default function Hero() {
+interface HeroProps {
+  photos?: Photo[];
+}
+
+export default function Hero({ photos = fallbackHeroPhotos }: HeroProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const shouldReduceMotion = useReducedMotion();
   const [activePhotoIdx, setActivePhotoIdx] = useState(0);
-  const [firstImageLoaded, setFirstImageLoaded] = useState(false);
+  const [firstImageLoaded, setFirstImageLoaded] = useState(() => !photos || photos.length === 0);
   const [imageErrorMap, setImageErrorMap] = useState<Record<string, boolean>>({});
+
+  const displayPhotos = photos || [];
+  const hasPhotos = displayPhotos.length > 0;
+  const firstPhotoSrc = displayPhotos[0]?.src || "";
+  const firstPhotoId = displayPhotos[0]?.id || "";
 
   // Live Toronto Clock (America/Toronto) rendered after mount to prevent hydration mismatch
   const [torontoTime, setTorontoTime] = useState<string>("");
@@ -38,27 +47,31 @@ export default function Hero() {
     return () => clearInterval(timer);
   }, []);
 
-  // Preload/check first hero image
+  // Preload/check first hero image (if available)
   useEffect(() => {
+    if (!firstPhotoSrc) return;
     if (typeof window === "undefined") return;
+
     const img = new window.Image();
-    img.src = heroPhotos[0]?.src || "";
+    img.src = firstPhotoSrc;
     img.onload = () => setFirstImageLoaded(true);
     img.onerror = () => {
       // Mark as loaded so animations proceed, but record failure
       setFirstImageLoaded(true);
-      setImageErrorMap((prev) => ({ ...prev, [heroPhotos[0].id]: true }));
+      if (firstPhotoId) {
+        setImageErrorMap((prev) => ({ ...prev, [firstPhotoId]: true }));
+      }
     };
-  }, []);
+  }, [firstPhotoSrc, firstPhotoId]);
 
   // Crossfade interval ~5s (respect reduced motion)
   useEffect(() => {
-    if (shouldReduceMotion || heroPhotos.length <= 1) return;
+    if (shouldReduceMotion || displayPhotos.length <= 1) return;
     const interval = setInterval(() => {
-      setActivePhotoIdx((prev) => (prev + 1) % heroPhotos.length);
+      setActivePhotoIdx((prev) => (prev + 1) % displayPhotos.length);
     }, 5000);
     return () => clearInterval(interval);
-  }, [shouldReduceMotion]);
+  }, [shouldReduceMotion, displayPhotos.length]);
 
   // Parallax: hero image moves down 0 to 15%, foreground fades as user scrolls out
   const { scrollYProgress } = useScroll({
@@ -69,9 +82,11 @@ export default function Hero() {
   const parallaxY = useTransform(scrollYProgress, [0, 1], ["0%", "15%"]);
   const contentOpacity = useTransform(scrollYProgress, [0, 0.7], [1, 0]);
 
-  const slideCounter = `${String(activePhotoIdx + 1).padStart(2, "0")} / ${String(
-    heroPhotos.length
-  ).padStart(2, "0")}`;
+  const slideCounter = hasPhotos
+    ? `${String(activePhotoIdx + 1).padStart(2, "0")} / ${String(
+        displayPhotos.length
+      ).padStart(2, "0")}`
+    : "00 / 00";
 
   const isReady = shouldReduceMotion || firstImageLoaded;
 
@@ -85,7 +100,7 @@ export default function Hero() {
         className="absolute inset-0 z-0 overflow-hidden bg-black"
         style={{ y: shouldReduceMotion ? "0%" : parallaxY }}
       >
-        {heroPhotos.map((photo, index) => {
+        {displayPhotos.map((photo, index) => {
           const isActive = index === activePhotoIdx;
           const hasError = imageErrorMap[photo.id];
 
@@ -100,209 +115,221 @@ export default function Hero() {
           }
 
           return (
-            <div
+            <motion.div
               key={photo.id}
-              className={`absolute inset-0 ${
-                shouldReduceMotion
-                  ? isActive
-                    ? "opacity-100 z-10"
-                    : "opacity-0 z-0"
-                  : `transition-opacity duration-1000 ease-in-out ${
-                      isActive ? "opacity-100 z-10" : "opacity-0 z-0"
-                    }`
-              }`}
-            >
-              {/* Entrance: Fades from 0 to 1 over 1.2s with scale 1.06 to 1 on initial load */}
-              <motion.div
-                initial={
-                  shouldReduceMotion
-                    ? { opacity: 1, scale: 1 }
-                    : { opacity: 0, scale: 1.06 }
-                }
-                animate={
-                  isReady
-                    ? { opacity: 1, scale: 1 }
-                    : { opacity: 0, scale: 1.06 }
-                }
-                transition={{
-                  duration: 1.2,
+              className="absolute inset-0 z-0 bg-black"
+              initial={false}
+              animate={{
+                opacity: isReady && isActive ? 1 : 0,
+                scale: shouldReduceMotion
+                  ? 1
+                  : isActive
+                  ? [1.06, 1.0]
+                  : 1.06,
+              }}
+              transition={{
+                opacity: {
+                  duration: shouldReduceMotion ? 0 : 1.2,
                   ease: [0.22, 1, 0.36, 1],
-                }}
-                className={`relative w-full h-full ${
-                  shouldReduceMotion
-                    ? "scale-100"
-                    : `transition-transform duration-[6000ms] ease-out ${
-                        isActive ? "scale-100" : "scale-110"
-                      }`
-                }`}
-              >
-                <Image
-                  src={photo.src}
-                  alt={photo.alt}
-                  fill
-                  priority={index === 0}
-                  sizes="100vw"
-                  onError={() =>
-                    setImageErrorMap((prev) => ({ ...prev, [photo.id]: true }))
-                  }
-                  className="object-cover object-center contrast-[1.08] brightness-[1.02] saturate-[1.05]"
-                />
-              </motion.div>
-            </div>
+                },
+                scale: {
+                  duration: shouldReduceMotion ? 0 : 6.5,
+                  ease: "linear",
+                },
+              }}
+            >
+              <Image
+                src={photo.src}
+                alt=""
+                aria-hidden="true"
+                fill
+                priority={index === 0}
+                sizes="100vw"
+                quality={90}
+                className="object-cover object-center select-none"
+                onError={() =>
+                  setImageErrorMap((prev) => ({ ...prev, [photo.id]: true }))
+                }
+              />
+            </motion.div>
           );
         })}
 
-        {/* Gradient ONLY at bottom for type legibility & marquee blend */}
+        {/* Empty state: If 0 photos, plain black background */}
+        {!hasPhotos && (
+          <div className="absolute inset-0 bg-black z-0" aria-hidden="true" />
+        )}
+
+        {/* 2. Film Grain Overlay (~6% opacity) */}
         <div
           aria-hidden="true"
-          className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black via-black/50 to-transparent z-10 pointer-events-none"
+          className="absolute inset-0 z-[1] pointer-events-none mix-blend-overlay opacity-[0.06]"
+          style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`,
+          }}
         />
 
-        {/* Subtle top shade to ensure nav and top metadata readability */}
+        {/* 3. Contrast Overlay: Subtle bottom gradient only for typography legibility */}
         <div
           aria-hidden="true"
-          className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-black/60 to-transparent z-10 pointer-events-none"
+          className="absolute inset-0 z-[2] pointer-events-none bg-gradient-to-t from-black/85 via-black/20 to-transparent"
         />
       </motion.div>
 
-      {/* Subtle Film Grain Overlay (SVG noise, about 6% opacity) */}
-      <div
-        aria-hidden="true"
-        className="absolute inset-0 pointer-events-none z-20 opacity-[0.06] mix-blend-screen"
-        style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`,
-        }}
-      />
-
-      {/* Foreground Content Container */}
+      {/* 4. Foreground Content */}
       <motion.div
-        className="relative z-30 flex flex-col justify-between flex-1 w-full max-w-[1440px] mx-auto px-4 sm:px-8 md:px-14 pt-24 pb-8 md:pb-12 pointer-events-none"
-        style={{ opacity: shouldReduceMotion ? 1 : contentOpacity }}
+        className="relative z-10 w-full min-h-svh flex flex-col justify-between p-4 sm:p-8 md:p-12 pointer-events-none"
+        style={{ opacity: contentOpacity }}
       >
-        {/* Top bar under nav: Left = Photography label; Right = Toronto Coordinates & Live Clock */}
-        <div className="flex justify-between items-start gap-4">
-          {/* Label "Photography / Toronto, Ontario" + 01 / Welcome */}
+        {/* Top bar under the floating header */}
+        <div className="flex justify-between items-start pt-20 md:pt-24">
+          {/* Label under nav on the left */}
           <motion.div
             initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0 }}
-            animate={isReady ? { opacity: 1 } : { opacity: 0 }}
+            animate={
+              isReady
+                ? { opacity: 1 }
+                : shouldReduceMotion
+                ? { opacity: 1 }
+                : { opacity: 0 }
+            }
             transition={{
-              duration: 0.8,
-              delay: shouldReduceMotion ? 0 : 0.8, // 0.8s after image load
-              ease: "easeOut",
+              duration: shouldReduceMotion ? 0 : 0.8,
+              delay: shouldReduceMotion ? 0 : 1.2,
             }}
-            className="flex flex-col gap-1"
+            className="flex flex-col gap-1 text-left"
           >
-            <span className="text-[10px] sm:text-xs uppercase tracking-[0.2em] text-[var(--accent)] font-medium">
+            <span className="text-[11px] sm:text-xs uppercase tracking-[0.2em] text-[#c8a96a] font-medium">
               01 / Welcome
             </span>
-            <span className="text-xs sm:text-sm uppercase tracking-[0.18em] text-[var(--fg)] drop-shadow-md">
+            <span className="text-[11px] sm:text-xs uppercase tracking-[0.18em] text-[#f2efe9]">
               {site.tagline}
             </span>
           </motion.div>
 
-          {/* Corner Metadata: Toronto coordinates & Live Toronto clock */}
+          {/* Top-Right: Toronto Coordinates + Live Clock */}
           <motion.div
             initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0 }}
-            animate={isReady ? { opacity: 1 } : { opacity: 0 }}
+            animate={
+              isReady
+                ? { opacity: 1 }
+                : shouldReduceMotion
+                ? { opacity: 1 }
+                : { opacity: 0 }
+            }
             transition={{
-              duration: 0.8,
-              delay: shouldReduceMotion ? 0 : 0.8, // 0.8s after image load
-              ease: "easeOut",
+              duration: shouldReduceMotion ? 0 : 0.8,
+              delay: shouldReduceMotion ? 0 : 1.2,
             }}
-            className="flex flex-col items-end text-right font-mono text-[10px] sm:text-xs tracking-wider text-[var(--fg)]/90 drop-shadow"
+            className="flex flex-col items-end text-right gap-1"
           >
-            <span className="uppercase text-[var(--muted)]">
-              43°39&apos;12&quot; N · 79°22&apos;59&quot; W
+            <span className="text-[10px] sm:text-[11px] uppercase tracking-[0.16em] text-[#8a8780] font-mono">
+              43°39&apos;12&quot;N 79°22&apos;59&quot;W
             </span>
-            <span className="text-[var(--accent)]">
-              TORONTO {torontoTime ? `${torontoTime} EDT` : "..."}
+            <span className="text-[10px] sm:text-[11px] uppercase tracking-[0.16em] text-[#f2efe9] font-mono">
+              TORONTO {torontoTime ? `${torontoTime} EST` : ""}
             </span>
           </motion.div>
         </div>
 
-        {/* Slide Counter on right edge */}
-        <div className="flex justify-end w-full my-auto pt-8 sm:pt-12">
-          <motion.div
-            initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0 }}
-            animate={isReady ? { opacity: 1 } : { opacity: 0 }}
-            transition={{
-              duration: 0.8,
-              delay: shouldReduceMotion ? 0 : 0.8,
-              ease: "easeOut",
-            }}
-            className="font-mono text-xs sm:text-sm tracking-widest text-[var(--fg)]/90 bg-black/40 backdrop-blur-sm px-3 py-1.5 rounded border border-white/10"
-          >
-            <span className="text-[var(--accent)] font-semibold">{slideCounter.slice(0, 2)}</span>
-            <span className="text-[var(--muted)]">{slideCounter.slice(2)}</span>
-          </motion.div>
-        </div>
+        {/* Bottom Area: Name (ASWIN / KRISHNA) + Status + Slide Counter */}
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6 pb-2 sm:pb-4">
+          {/* Aswin Krishna Name Reveal */}
+          <div className="flex flex-col overflow-hidden text-left pl-4 sm:pl-0">
+            <h1 className="font-['Bebas_Neue',sans-serif] leading-[0.84] text-[#f2efe9] tracking-tight flex flex-col select-none text-[clamp(4.5rem,min(19vw,26svh),17rem)]">
+              {/* Line 1: ASWIN */}
+              <span className="overflow-hidden block">
+                <motion.span
+                  className="block"
+                  initial={
+                    shouldReduceMotion ? { y: "0%" } : { y: "105%" }
+                  }
+                  animate={
+                    isReady
+                      ? { y: "0%" }
+                      : shouldReduceMotion
+                      ? { y: "0%" }
+                      : { y: "105%" }
+                  }
+                  transition={{
+                    duration: shouldReduceMotion ? 0 : 1.1,
+                    delay: shouldReduceMotion ? 0 : 0.4,
+                    ease: [0.22, 1, 0.36, 1],
+                  }}
+                >
+                  ASWIN
+                </motion.span>
+              </span>
 
-        {/* Bottom area: Anchored bottom-left with at least 6rem space under nav */}
-        <div className="flex flex-col md:flex-row items-start md:items-end justify-between gap-6 mt-auto pt-12 sm:pt-16">
-          {/* Name "ASWIN / KRISHNA" strictly left-aligned on mobile (px-4 = 1rem) */}
-          <div className="flex flex-col items-start text-left select-none w-full md:w-auto">
-            {/* "Available for bookings" with pulsing dot */}
+              {/* Line 2: KRISHNA */}
+              <span className="overflow-hidden block -mt-1 sm:-mt-3">
+                <motion.span
+                  className="block"
+                  initial={
+                    shouldReduceMotion ? { y: "0%" } : { y: "105%" }
+                  }
+                  animate={
+                    isReady
+                      ? { y: "0%" }
+                      : shouldReduceMotion
+                      ? { y: "0%" }
+                      : { y: "105%" }
+                  }
+                  transition={{
+                    duration: shouldReduceMotion ? 0 : 1.1,
+                    delay: shouldReduceMotion ? 0 : 0.52,
+                    ease: [0.22, 1, 0.36, 1],
+                  }}
+                >
+                  KRISHNA
+                </motion.span>
+              </span>
+            </h1>
+
+            {/* Bottom-left metadata: Available for bookings */}
             <motion.div
               initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0 }}
-              animate={isReady ? { opacity: 1 } : { opacity: 0 }}
+              animate={
+                isReady
+                  ? { opacity: 1 }
+                  : shouldReduceMotion
+                  ? { opacity: 1 }
+                  : { opacity: 0 }
+              }
               transition={{
-                duration: 0.8,
-                delay: shouldReduceMotion ? 0 : 0.8,
-                ease: "easeOut",
+                duration: shouldReduceMotion ? 0 : 0.8,
+                delay: shouldReduceMotion ? 0 : 1.2,
               }}
-              className="flex items-center gap-2 mb-2 sm:mb-3"
+              className="flex items-center gap-2 mt-4 text-[10px] sm:text-xs uppercase tracking-[0.18em] text-[#8a8780]"
             >
-              <span className="relative flex h-2 w-2">
-                {!shouldReduceMotion && (
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--accent)] opacity-75" />
-                )}
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-[var(--accent)]" />
-              </span>
-              <span className="text-[10px] sm:text-xs uppercase tracking-[0.2em] text-[var(--fg)]/90 font-medium drop-shadow">
-                Available for bookings
-              </span>
+              <span
+                className={`w-2 h-2 rounded-full bg-[#c8a96a] ${
+                  shouldReduceMotion ? "" : "animate-pulse"
+                }`}
+                aria-hidden="true"
+              />
+              <span>Available for bookings · 2026/27</span>
             </motion.div>
-
-            {/* Line 1: ASWIN (0.4s after image loaded, slides up from mask) */}
-            <div className="overflow-hidden">
-              <motion.h1
-                initial={shouldReduceMotion ? { y: 0, opacity: 1 } : { y: "105%" }}
-                animate={
-                  isReady
-                    ? { y: 0, opacity: 1 }
-                    : { y: "105%", opacity: 0 }
-                }
-                transition={{
-                  duration: 1.1,
-                  delay: shouldReduceMotion ? 0 : 0.4,
-                  ease: [0.22, 1, 0.36, 1],
-                }}
-                className="font-['Bebas_Neue',sans-serif] text-[clamp(4.5rem,min(19vw,26svh),17rem)] leading-[0.88] text-[var(--fg)] tracking-tight drop-shadow-2xl"
-              >
-                ASWIN
-              </motion.h1>
-            </div>
-
-            {/* Line 2: KRISHNA (0.4s + 0.12s stagger = 0.52s) */}
-            <div className="overflow-hidden">
-              <motion.h1
-                initial={shouldReduceMotion ? { y: 0, opacity: 1 } : { y: "105%" }}
-                animate={
-                  isReady
-                    ? { y: 0, opacity: 1 }
-                    : { y: "105%", opacity: 0 }
-                }
-                transition={{
-                  duration: 1.1,
-                  delay: shouldReduceMotion ? 0 : 0.52,
-                  ease: [0.22, 1, 0.36, 1],
-                }}
-                className="font-['Bebas_Neue',sans-serif] text-[clamp(4.5rem,min(19vw,26svh),17rem)] leading-[0.88] text-[var(--fg)] tracking-tight drop-shadow-2xl"
-              >
-                KRISHNA
-              </motion.h1>
-            </div>
           </div>
+
+          {/* Bottom-Right: Slide Counter */}
+          <motion.div
+            initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0 }}
+            animate={
+              isReady
+                ? { opacity: 1 }
+                : shouldReduceMotion
+                ? { opacity: 1 }
+                : { opacity: 0 }
+            }
+            transition={{
+              duration: shouldReduceMotion ? 0 : 0.8,
+              delay: shouldReduceMotion ? 0 : 1.2,
+            }}
+            className="flex items-center gap-3 text-right self-end sm:self-auto text-xs uppercase tracking-[0.2em] font-mono text-[#8a8780]"
+          >
+            <span>{slideCounter}</span>
+          </motion.div>
         </div>
       </motion.div>
     </section>
