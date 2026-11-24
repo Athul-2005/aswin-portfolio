@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { recentArts } from "@/data/recent";
+import { getRecentArts } from "@/lib/recent";
 import { site } from "@/data/content";
 
 export const metadata = {
@@ -8,9 +8,10 @@ export const metadata = {
     "Latest photography pieces and Instagram journal by Aswin Krishna in Toronto, Ontario.",
 };
 
-export default function RecentPage() {
-  const featured = recentArts[0];
-  const gridItems = recentArts.slice(1);
+export default async function RecentPage() {
+  const arts = await getRecentArts();
+  const featured = arts[0];
+  const gridItems = arts.slice(1);
 
   return (
     <main
