@@ -7,7 +7,6 @@ import Nav from "@/components/Nav";
 import Footer from "@/components/Footer";
 import SmoothScroll from "@/components/SmoothScroll";
 import { PageTransitionProvider } from "@/components/PageTransition";
-import CustomCursor from "@/components/CustomCursor";
 import ScrollProgress from "@/components/ScrollProgress";
 
 const bebasNeue = Bebas_Neue({
@@ -83,7 +82,6 @@ export default function RootLayout({
       <body className="min-h-svh bg-[var(--bg)] text-[var(--fg)] font-sans antialiased selection:bg-[var(--accent)] selection:text-black">
         <SkipLink />
         <ScrollProgress />
-        <CustomCursor />
         <PageTransitionProvider>
           <SmoothScroll>
             <div className="flex flex-col min-h-svh">

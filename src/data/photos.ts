@@ -1,5 +1,12 @@
 export type Category = "nature" | "wedding" | "casual";
 
+export type CameraReadout = {
+  focalLength: string;
+  aperture: string;
+  shutterSpeed: string;
+  iso: string;
+};
+
 export type Photo = {
   id: string;
   src: string;
@@ -10,6 +17,7 @@ export type Photo = {
   height: number;
   alt: string;
   credit: { name: string; url: string };
+  camera?: CameraReadout; // [PLACEHOLDER stock values]
 };
 
 // [PLACEHOLDER stock photos - to be replaced with Aswin's actual work before launch]
@@ -24,6 +32,12 @@ export const heroPhotos: Photo[] = [
     height: 1333,
     alt: "Moody Toronto skyline seen from across the water at dusk",
     credit: { name: "Unsplash", url: "https://unsplash.com" },
+    camera: {
+      focalLength: "35mm",
+      aperture: "ƒ/2.8",
+      shutterSpeed: "1/125s",
+      iso: "ISO 400",
+    },
   },
   {
     id: "hero-2",
@@ -35,6 +49,12 @@ export const heroPhotos: Photo[] = [
     height: 1333,
     alt: "Portrait bathed in warm golden hour sunset light",
     credit: { name: "Unsplash", url: "https://unsplash.com" },
+    camera: {
+      focalLength: "50mm",
+      aperture: "ƒ/1.4",
+      shutterSpeed: "1/500s",
+      iso: "ISO 100",
+    },
   },
   {
     id: "hero-3",
@@ -46,6 +66,12 @@ export const heroPhotos: Photo[] = [
     height: 1333,
     alt: "Moody landscape with dense misty pine trees in Ontario",
     credit: { name: "Unsplash", url: "https://unsplash.com" },
+    camera: {
+      focalLength: "24mm",
+      aperture: "ƒ/4.0",
+      shutterSpeed: "1/60s",
+      iso: "ISO 200",
+    },
   },
 ];
 

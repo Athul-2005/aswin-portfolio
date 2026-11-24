@@ -46,6 +46,8 @@ export default function Nav() {
     };
   }, [mobileMenuOpen]);
 
+  const isOverHero = pathname === "/" && !isScrolled;
+
   return (
     <>
       <header
@@ -61,7 +63,7 @@ export default function Nav() {
             className="font-['Bebas_Neue',sans-serif] text-2xl sm:text-3xl tracking-widest text-[var(--fg)] hover:text-[var(--accent)] transition-colors focus-visible:outline-1 focus-visible:outline-[var(--accent)]"
             aria-label={`${site.name} home`}
           >
-            ASWIN KRISHNA
+            {isOverHero ? "AK" : "ASWIN KRISHNA"}
           </TransitionLink>
 
           {/* Desktop Nav */}
