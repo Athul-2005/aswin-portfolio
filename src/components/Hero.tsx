@@ -161,12 +161,12 @@ export default function Hero() {
 
       {/* Foreground Content Container */}
       <motion.div
-        className="relative z-30 flex flex-col justify-between flex-1 w-full max-w-[1440px] mx-auto px-6 sm:px-10 md:px-14 pt-20 pb-8 md:pb-12 pointer-events-none"
+        className="relative z-30 flex flex-col justify-between flex-1 w-full max-w-[1440px] mx-auto px-4 sm:px-8 md:px-14 pt-24 sm:pt-24 pb-8 md:pb-12 pointer-events-none"
         style={{ opacity: shouldReduceMotion ? 1 : contentOpacity }}
       >
         {/* Top bar under nav: Left = Photography label; Right = Toronto Coordinates & Live Clock */}
         <div className="flex justify-between items-start gap-4">
-          {/* 4. Label "Photography / Toronto, Ontario" under the nav */}
+          {/* 4 & 6. Label "Photography / Toronto, Ontario" moved clearly below the header pill */}
           <div className="flex flex-col gap-1">
             <span className="text-[10px] sm:text-xs uppercase tracking-[0.2em] text-[var(--accent)] font-medium">
               01 / Welcome
@@ -211,9 +211,9 @@ export default function Hero() {
 
         {/* Bottom area: Anchored bottom-left with at least 6rem space under nav */}
         <div className="flex flex-col md:flex-row items-start md:items-end justify-between gap-6 mt-auto pt-24 sm:pt-28">
-          {/* 3. Name "ASWIN / KRISHNA" anchored bottom-left, overlapping lower edge */}
-          <div className="flex flex-col select-none -mb-3 sm:-mb-5 md:-mb-8">
-            {/* 6. "Available for bookings" with pulsing dot placed above name */}
+          {/* 3 & 6. Name "ASWIN / KRISHNA" strictly left-aligned on mobile (px-4 = 1rem), overlapping lower edge */}
+          <div className="flex flex-col items-start text-left select-none -mb-3 sm:-mb-5 md:-mb-8 w-full md:w-auto">
+            {/* "Available for bookings" with pulsing dot placed above name */}
             <div className="flex items-center gap-2 mb-2 sm:mb-3">
               <span className="relative flex h-2 w-2">
                 {!shouldReduceMotion && (
@@ -255,29 +255,6 @@ export default function Hero() {
               >
                 KRISHNA
               </motion.h1>
-            </div>
-          </div>
-
-          {/* Bottom-right: Scroll Cue */}
-          <div className="flex flex-col items-center gap-2.5 self-end pb-2 md:pb-4 pointer-events-auto">
-            <span className="text-[10px] uppercase tracking-[0.25em] text-[var(--muted)] font-mono">
-              SCROLL
-            </span>
-            <div className="w-[1px] h-9 bg-[var(--line)] relative overflow-hidden">
-              {!shouldReduceMotion && (
-                <motion.div
-                  className="w-full h-3.5 bg-[var(--accent)]"
-                  animate={{
-                    y: [0, 36],
-                    opacity: [0, 1, 0],
-                  }}
-                  transition={{
-                    repeat: Infinity,
-                    duration: 2,
-                    ease: "easeInOut",
-                  }}
-                />
-              )}
             </div>
           </div>
         </div>

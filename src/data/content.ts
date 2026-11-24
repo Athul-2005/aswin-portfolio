@@ -2,8 +2,8 @@ export const site = {
   name: "Aswin Krishna",
   tagline: "Photography / Toronto, Ontario",
   email: "hello@example.com", // [PLACEHOLDER]
-  instagram: "https://instagram.com/", // [PLACEHOLDER]
-  instagramHandle: "@aswin", // [PLACEHOLDER]
+  instagram: "https://www.instagram.com/foto.aswin/",
+  instagramHandle: "@foto.aswin",
   whatsapp: "https://wa.me/", // [PLACEHOLDER]
   location: "Toronto, Ontario, Canada",
 };
