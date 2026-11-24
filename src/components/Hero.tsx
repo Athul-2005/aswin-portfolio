@@ -10,6 +10,8 @@ export default function Hero() {
   const containerRef = useRef<HTMLDivElement>(null);
   const shouldReduceMotion = useReducedMotion();
   const [activePhotoIdx, setActivePhotoIdx] = useState(0);
+  const [firstImageLoaded, setFirstImageLoaded] = useState(false);
+  const [imageErrorMap, setImageErrorMap] = useState<Record<string, boolean>>({});
 
   // Live Toronto Clock (America/Toronto) rendered after mount to prevent hydration mismatch
   const [torontoTime, setTorontoTime] = useState<string>("");
@@ -36,6 +38,19 @@ export default function Hero() {
     return () => clearInterval(timer);
   }, []);
 
+  // Preload/check first hero image
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const img = new window.Image();
+    img.src = heroPhotos[0]?.src || "";
+    img.onload = () => setFirstImageLoaded(true);
+    img.onerror = () => {
+      // Mark as loaded so animations proceed, but record failure
+      setFirstImageLoaded(true);
+      setImageErrorMap((prev) => ({ ...prev, [heroPhotos[0].id]: true }));
+    };
+  }, []);
+
   // Crossfade interval ~5s (respect reduced motion)
   useEffect(() => {
     if (shouldReduceMotion || heroPhotos.length <= 1) return;
@@ -54,10 +69,11 @@ export default function Hero() {
   const parallaxY = useTransform(scrollYProgress, [0, 1], ["0%", "15%"]);
   const contentOpacity = useTransform(scrollYProgress, [0, 0.7], [1, 0]);
 
-  const activePhoto = heroPhotos[activePhotoIdx];
   const slideCounter = `${String(activePhotoIdx + 1).padStart(2, "0")} / ${String(
     heroPhotos.length
   ).padStart(2, "0")}`;
+
+  const isReady = shouldReduceMotion || firstImageLoaded;
 
   return (
     <section
@@ -66,11 +82,23 @@ export default function Hero() {
     >
       {/* 1. Fullscreen Hero Photos: Bright & High Contrast with Ken Burns */}
       <motion.div
-        className="absolute inset-0 z-0 overflow-hidden"
+        className="absolute inset-0 z-0 overflow-hidden bg-black"
         style={{ y: shouldReduceMotion ? "0%" : parallaxY }}
       >
         {heroPhotos.map((photo, index) => {
           const isActive = index === activePhotoIdx;
+          const hasError = imageErrorMap[photo.id];
+
+          if (hasError) {
+            return (
+              <div
+                key={photo.id}
+                className="absolute inset-0 bg-black z-0"
+                aria-hidden="true"
+              />
+            );
+          }
+
           return (
             <div
               key={photo.id}
@@ -84,7 +112,22 @@ export default function Hero() {
                     }`
               }`}
             >
-              <div
+              {/* Entrance: Fades from 0 to 1 over 1.2s with scale 1.06 to 1 on initial load */}
+              <motion.div
+                initial={
+                  shouldReduceMotion
+                    ? { opacity: 1, scale: 1 }
+                    : { opacity: 0, scale: 1.06 }
+                }
+                animate={
+                  isReady
+                    ? { opacity: 1, scale: 1 }
+                    : { opacity: 0, scale: 1.06 }
+                }
+                transition={{
+                  duration: 1.2,
+                  ease: [0.22, 1, 0.36, 1],
+                }}
                 className={`relative w-full h-full ${
                   shouldReduceMotion
                     ? "scale-100"
@@ -99,14 +142,17 @@ export default function Hero() {
                   fill
                   priority={index === 0}
                   sizes="100vw"
+                  onError={() =>
+                    setImageErrorMap((prev) => ({ ...prev, [photo.id]: true }))
+                  }
                   className="object-cover object-center contrast-[1.08] brightness-[1.02] saturate-[1.05]"
                 />
-              </div>
+              </motion.div>
             </div>
           );
         })}
 
-        {/* Replaced flat dark overlay: Gradient ONLY at bottom for type legibility & marquee blend */}
+        {/* Gradient ONLY at bottom for type legibility & marquee blend */}
         <div
           aria-hidden="true"
           className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black via-black/50 to-transparent z-10 pointer-events-none"
@@ -119,7 +165,7 @@ export default function Hero() {
         />
       </motion.div>
 
-      {/* 8. Subtle Film Grain Overlay (SVG noise, about 6% opacity) */}
+      {/* Subtle Film Grain Overlay (SVG noise, about 6% opacity) */}
       <div
         aria-hidden="true"
         className="absolute inset-0 pointer-events-none z-20 opacity-[0.06] mix-blend-screen"
@@ -128,93 +174,84 @@ export default function Hero() {
         }}
       />
 
-      {/* 5. Viewfinder HUD: Thin Corner Brackets */}
-      <div
-        aria-hidden="true"
-        className="absolute inset-4 sm:inset-8 md:inset-10 z-20 pointer-events-none border border-transparent"
-      >
-        {/* Top-Left Bracket */}
-        <div className="absolute top-0 left-0 w-4 sm:w-6 h-4 sm:h-6 border-t border-l border-white/40" />
-        {/* Top-Right Bracket */}
-        <div className="absolute top-0 right-0 w-4 sm:w-6 h-4 sm:h-6 border-t border-r border-white/40" />
-        {/* Bottom-Left Bracket */}
-        <div className="absolute bottom-0 left-0 w-4 sm:w-6 h-4 sm:h-6 border-b border-l border-white/40" />
-        {/* Bottom-Right Bracket */}
-        <div className="absolute bottom-0 right-0 w-4 sm:w-6 h-4 sm:h-6 border-b border-r border-white/40" />
-
-        {/* Center Target Focus Box: Scales 1.4 to 1 and fades out on load */}
-        {!shouldReduceMotion && (
-          <motion.div
-            initial={{ scale: 1.4, opacity: 0.9 }}
-            animate={{ scale: 1, opacity: 0 }}
-            transition={{
-              duration: 1.2,
-              delay: 0.3,
-              ease: [0.22, 1, 0.36, 1],
-            }}
-            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-16 sm:w-24 h-16 sm:h-24 border border-[var(--accent)] flex items-center justify-center"
-          >
-            <div className="w-1.5 h-1.5 rounded-full bg-[var(--accent)]/80" />
-          </motion.div>
-        )}
-      </div>
-
       {/* Foreground Content Container */}
       <motion.div
-        className="relative z-30 flex flex-col justify-between flex-1 w-full max-w-[1440px] mx-auto px-4 sm:px-8 md:px-14 pt-24 sm:pt-24 pb-8 md:pb-12 pointer-events-none"
+        className="relative z-30 flex flex-col justify-between flex-1 w-full max-w-[1440px] mx-auto px-4 sm:px-8 md:px-14 pt-24 pb-8 md:pb-12 pointer-events-none"
         style={{ opacity: shouldReduceMotion ? 1 : contentOpacity }}
       >
         {/* Top bar under nav: Left = Photography label; Right = Toronto Coordinates & Live Clock */}
         <div className="flex justify-between items-start gap-4">
-          {/* 4 & 6. Label "Photography / Toronto, Ontario" moved clearly below the header pill */}
-          <div className="flex flex-col gap-1">
+          {/* Label "Photography / Toronto, Ontario" + 01 / Welcome */}
+          <motion.div
+            initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0 }}
+            animate={isReady ? { opacity: 1 } : { opacity: 0 }}
+            transition={{
+              duration: 0.8,
+              delay: shouldReduceMotion ? 0 : 0.8, // 0.8s after image load
+              ease: "easeOut",
+            }}
+            className="flex flex-col gap-1"
+          >
             <span className="text-[10px] sm:text-xs uppercase tracking-[0.2em] text-[var(--accent)] font-medium">
               01 / Welcome
             </span>
             <span className="text-xs sm:text-sm uppercase tracking-[0.18em] text-[var(--fg)] drop-shadow-md">
               {site.tagline}
             </span>
-          </div>
+          </motion.div>
 
-          {/* 6. Corner Metadata: Toronto coordinates & Live Toronto clock */}
-          <div className="flex flex-col items-end text-right font-mono text-[10px] sm:text-xs tracking-wider text-[var(--fg)]/90 drop-shadow">
-            <span className="uppercase text-[var(--muted)]">43°39&apos;12&quot; N · 79°22&apos;59&quot; W</span>
+          {/* Corner Metadata: Toronto coordinates & Live Toronto clock */}
+          <motion.div
+            initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0 }}
+            animate={isReady ? { opacity: 1 } : { opacity: 0 }}
+            transition={{
+              duration: 0.8,
+              delay: shouldReduceMotion ? 0 : 0.8, // 0.8s after image load
+              ease: "easeOut",
+            }}
+            className="flex flex-col items-end text-right font-mono text-[10px] sm:text-xs tracking-wider text-[var(--fg)]/90 drop-shadow"
+          >
+            <span className="uppercase text-[var(--muted)]">
+              43°39&apos;12&quot; N · 79°22&apos;59&quot; W
+            </span>
             <span className="text-[var(--accent)]">
               TORONTO {torontoTime ? `${torontoTime} EDT` : "..."}
             </span>
-          </div>
+          </motion.div>
         </div>
 
-        {/* Center / Mid-lower Viewfinder Camera Readout & Slide Counter */}
-        <div className="flex items-center justify-between w-full my-auto pt-16 sm:pt-20">
-          {/* 5. Camera Readout: changes with each slide */}
-          <div className="flex items-center gap-2 sm:gap-4 font-mono text-[10px] sm:text-xs uppercase tracking-widest text-[var(--fg)]/85 bg-black/40 backdrop-blur-sm px-3 py-1.5 rounded border border-white/10">
-            <span className="text-[var(--accent)] font-semibold">
-              {activePhoto.camera?.aperture ?? "ƒ/2.8"}
-            </span>
-            <span className="text-white/30">|</span>
-            <span>{activePhoto.camera?.shutterSpeed ?? "1/125s"}</span>
-            <span className="text-white/30">|</span>
-            <span>{activePhoto.camera?.iso ?? "ISO 100"}</span>
-            <span className="text-white/30 hidden sm:inline">|</span>
-            <span className="text-[var(--muted)] hidden sm:inline">
-              {activePhoto.camera?.focalLength ?? "35mm"}
-            </span>
-          </div>
-
-          {/* 7. Slide Counter "01 / 03" that updates on crossfade */}
-          <div className="font-mono text-xs sm:text-sm tracking-widest text-[var(--fg)]/90 bg-black/40 backdrop-blur-sm px-3 py-1.5 rounded border border-white/10">
+        {/* Slide Counter on right edge */}
+        <div className="flex justify-end w-full my-auto pt-8 sm:pt-12">
+          <motion.div
+            initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0 }}
+            animate={isReady ? { opacity: 1 } : { opacity: 0 }}
+            transition={{
+              duration: 0.8,
+              delay: shouldReduceMotion ? 0 : 0.8,
+              ease: "easeOut",
+            }}
+            className="font-mono text-xs sm:text-sm tracking-widest text-[var(--fg)]/90 bg-black/40 backdrop-blur-sm px-3 py-1.5 rounded border border-white/10"
+          >
             <span className="text-[var(--accent)] font-semibold">{slideCounter.slice(0, 2)}</span>
             <span className="text-[var(--muted)]">{slideCounter.slice(2)}</span>
-          </div>
+          </motion.div>
         </div>
 
         {/* Bottom area: Anchored bottom-left with at least 6rem space under nav */}
-        <div className="flex flex-col md:flex-row items-start md:items-end justify-between gap-6 mt-auto pt-24 sm:pt-28">
-          {/* 3 & 6. Name "ASWIN / KRISHNA" strictly left-aligned on mobile (px-4 = 1rem), overlapping lower edge */}
-          <div className="flex flex-col items-start text-left select-none -mb-3 sm:-mb-5 md:-mb-8 w-full md:w-auto">
-            {/* "Available for bookings" with pulsing dot placed above name */}
-            <div className="flex items-center gap-2 mb-2 sm:mb-3">
+        <div className="flex flex-col md:flex-row items-start md:items-end justify-between gap-6 mt-auto pt-12 sm:pt-16">
+          {/* Name "ASWIN / KRISHNA" strictly left-aligned on mobile (px-4 = 1rem) */}
+          <div className="flex flex-col items-start text-left select-none w-full md:w-auto">
+            {/* "Available for bookings" with pulsing dot */}
+            <motion.div
+              initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0 }}
+              animate={isReady ? { opacity: 1 } : { opacity: 0 }}
+              transition={{
+                duration: 0.8,
+                delay: shouldReduceMotion ? 0 : 0.8,
+                ease: "easeOut",
+              }}
+              className="flex items-center gap-2 mb-2 sm:mb-3"
+            >
               <span className="relative flex h-2 w-2">
                 {!shouldReduceMotion && (
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--accent)] opacity-75" />
@@ -224,34 +261,43 @@ export default function Hero() {
               <span className="text-[10px] sm:text-xs uppercase tracking-[0.2em] text-[var(--fg)]/90 font-medium drop-shadow">
                 Available for bookings
               </span>
-            </div>
+            </motion.div>
 
-            {/* Line 1: ASWIN */}
+            {/* Line 1: ASWIN (0.4s after image loaded, slides up from mask) */}
             <div className="overflow-hidden">
               <motion.h1
                 initial={shouldReduceMotion ? { y: 0, opacity: 1 } : { y: "105%" }}
-                animate={{ y: 0, opacity: 1 }}
+                animate={
+                  isReady
+                    ? { y: 0, opacity: 1 }
+                    : { y: "105%", opacity: 0 }
+                }
                 transition={{
                   duration: 1.1,
+                  delay: shouldReduceMotion ? 0 : 0.4,
                   ease: [0.22, 1, 0.36, 1],
                 }}
-                className="font-['Bebas_Neue',sans-serif] text-[clamp(4.5rem,19vw,17rem)] leading-[0.85] text-[var(--fg)] tracking-tight drop-shadow-2xl"
+                className="font-['Bebas_Neue',sans-serif] text-[clamp(4.5rem,min(19vw,26svh),17rem)] leading-[0.88] text-[var(--fg)] tracking-tight drop-shadow-2xl"
               >
                 ASWIN
               </motion.h1>
             </div>
 
-            {/* Line 2: KRISHNA */}
+            {/* Line 2: KRISHNA (0.4s + 0.12s stagger = 0.52s) */}
             <div className="overflow-hidden">
               <motion.h1
                 initial={shouldReduceMotion ? { y: 0, opacity: 1 } : { y: "105%" }}
-                animate={{ y: 0, opacity: 1 }}
+                animate={
+                  isReady
+                    ? { y: 0, opacity: 1 }
+                    : { y: "105%", opacity: 0 }
+                }
                 transition={{
-                  delay: 0.12,
                   duration: 1.1,
+                  delay: shouldReduceMotion ? 0 : 0.52,
                   ease: [0.22, 1, 0.36, 1],
                 }}
-                className="font-['Bebas_Neue',sans-serif] text-[clamp(4.5rem,19vw,17rem)] leading-[0.85] text-[var(--fg)] tracking-tight drop-shadow-2xl"
+                className="font-['Bebas_Neue',sans-serif] text-[clamp(4.5rem,min(19vw,26svh),17rem)] leading-[0.88] text-[var(--fg)] tracking-tight drop-shadow-2xl"
               >
                 KRISHNA
               </motion.h1>
